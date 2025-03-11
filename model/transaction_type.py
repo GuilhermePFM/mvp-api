@@ -1,8 +1,6 @@
-from sqlalchemy import Column, String, Integer, DateTime, Float
+from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship
-from datetime import datetime
-from typing import Union
-from model import Base, User, TransactionType, TransactionCategory
+from model import Base
 
 
 class TransactionType(Base):
@@ -10,6 +8,7 @@ class TransactionType(Base):
 
     id = Column("pk_transaction_type", Integer, primary_key=True)
     type = Column(String(140), unique=True)
+    transaction = relationship("Transaction") 
     
     def __init__(self, type:str):  
         """

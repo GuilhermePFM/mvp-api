@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Union
 from model import Base, User, TransactionType, TransactionCategory
-
+from sqlalchemy import ForeignKey
 
 class Transaction(Base):
     __tablename__ = 'transactions'
@@ -14,10 +14,12 @@ class Transaction(Base):
     transaction_date = Column(DateTime)
     created_at = Column(DateTime, default=datetime.now())
     
-    user = relationship("User") 
-    transaction_type = relationship("TransactionType") 
-    transaction_category = relationship("TransactionCategory") 
     
+    user = Column(Integer, ForeignKey("User.pk_user"), nullable=False)
+
+    transaction_type = Column(Integer, ForeignKey("TransactionType.pk_transaction_type"), nullable=False)
+    transaction_category = Column(Integer, ForeignKey("TransactionCategory.pk_transaction_category"), nullable=False)
+
     def __init__(self, value:float, transaction_date:DateTime, user:User, transaction_type:TransactionType, transaction_category:TransactionCategory, created_at:DateTime = None):  
         """
         Creates a new Transaction
@@ -37,3 +39,6 @@ class Transaction(Base):
 
         if created_at:
             self.created_at = created_at
+
+        def __str__(self):
+            return f"{self.value} - {self.transaction_date} - {self.user} - {self.transaction_type} - {self.category}"

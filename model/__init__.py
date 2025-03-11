@@ -5,10 +5,10 @@ import os
 
 # importando os elementos definidos no modelo
 from model.base import Base
-from model.transaction import Transaction
+from model.user import User
 from model.transaction_category import TransactionCategory
 from model.transaction_type import TransactionType
-from model.user import User
+from model.transaction import Transaction
 from pathlib import Path
 
 
@@ -26,7 +26,7 @@ def create_database_dir(dirname:str, clean=False):
     elif not dirpath.exists():
         os.makedirs(dirpath)
 
-def populate_database():
+def init_database():
     # Verifica se o diretorio não existe
     if not os.path.exists(DB_PATH):
         # então cria o diretorio
@@ -46,3 +46,7 @@ def populate_database():
 
     # cria as tabelas do banco, caso não existam
     Base.metadata.create_all(engine)
+
+    return Session
+
+Session= init_database()
