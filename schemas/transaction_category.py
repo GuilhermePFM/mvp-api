@@ -15,3 +15,7 @@ def show_category(category:TransactionCategory):
 
 class ListTransactionCategoriesSchema(BaseModel):
     transaction_categories: List[TransactionCategorySchema]
+
+class DeleteTransactionCategorySchema(BaseModel):
+    category: int
+    message:str

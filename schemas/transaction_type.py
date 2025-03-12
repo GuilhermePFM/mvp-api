@@ -15,3 +15,7 @@ def show_type(ttype:TransactionType):
 
 class ListTransactionTypesSchema(BaseModel):
     transaction_types: List[TransactionTypeSchema]
+
+class DeleteTransactionTypeSchema(BaseModel):
+    type: int
+    message:str

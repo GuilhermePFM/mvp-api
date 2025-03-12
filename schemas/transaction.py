@@ -35,3 +35,10 @@ def show_transaction(transactions: List[Transaction]):
         })
 
     return {"transactions": result}
+
+class DeleteTransactionSchema(BaseModel):
+    type: int
+    message:str
+
+class SearchTransactionSchema(BaseModel):
+    id: int

@@ -1,15 +1,18 @@
 from model.transaction_type import TransactionType
-from schemas import ErrorSchema, show_type, TransactionTypeSchema, ListTransactionTypesSchema
+from schemas import ErrorSchema, show_type, TransactionTypeSchema, ListTransactionTypesSchema, DeleteTransactionTypeSchema
 from config import app
 from config import transaction_type_tag as tag 
 from model import Session, User
 from logger import logger
 from sqlalchemy.exc import IntegrityError
+from urllib.parse import unquote
 
 
 @app.post('/transaction_type', tags=[tag],
           responses={"200": TransactionTypeSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_transaction_type(form: TransactionTypeSchema):
+    """
+    Add a new transaction type"""
     ttype = TransactionType(
         type=form.type,
        )
@@ -38,6 +41,8 @@ def add_transaction_type(form: TransactionTypeSchema):
 @app.get('/transaction_types', tags=[tag],
           responses={"200": ListTransactionTypesSchema, "409": ErrorSchema, "400": ErrorSchema})
 def get_all_transaction_types():
+    """
+    Get all transaction types in the database"""
     logger.debug(f"Listing all transaction types")
    
     session = Session()
@@ -48,3 +53,24 @@ def get_all_transaction_types():
     else:
         logger.debug(f"{len(ttypes)} types found")
         return [show_type(ttype) for ttype in ttypes], 200
+
+@app.delete('/transaction_type', tags=[tag],
+            responses={"200": DeleteTransactionTypeSchema, "404": ErrorSchema})
+def delete_type(query: TransactionTypeSchema) -> tuple[dict[str, str], int]:
+    """Deletes a type given name
+
+    Return a confirmation message
+    """
+    ttype = unquote(unquote(query.type))
+    logger.debug(f"Deleting type {ttype}")
+    session = Session()
+    count = session.query(TransactionType).filter(TransactionType.type == ttype).delete()
+    session.commit()
+
+    if count > 0:
+        logger.debug(f"Type #{ttype} deleted")
+        return {"mesage": "Type removed successfully", "type": ttype}, 200
+    else:
+        error_msg = "Type not found"
+        logger.warning(f"Error removing type '{ttype}', {error_msg}")
+        return {"mesage": error_msg}, 404

@@ -1,5 +1,6 @@
+from pickletools import int4
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from datetime import datetime
 from model.transaction import Transaction
@@ -12,7 +13,7 @@ class UserSchema(BaseModel):
     last_name: str = 'Smith'
     email: str = 'john.smith@gmail.com'
 
-def show_user(user):
+def show_user(user) -> dict[str, Any]:
      return {
             "first_name": user.first_name,
             "last_name": user.last_name,
@@ -25,3 +26,10 @@ class SearchUserSchema(BaseModel):
 
 class ListUserSchema(BaseModel):
     users: List[UserSchema]
+
+
+class DeleteUserSchema(BaseModel):
+    id: int
+    message:str
+
+
