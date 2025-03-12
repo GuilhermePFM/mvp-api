@@ -18,3 +18,5 @@ class TransactionType(Base):
             type: Type of a transaction
         """
         self.type = type
+    def __str__(self):
+        return f'{self.type}'

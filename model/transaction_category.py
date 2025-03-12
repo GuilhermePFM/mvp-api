@@ -9,7 +9,7 @@ class TransactionCategory(Base):
     name = Column(String(140), unique=True)
     transaction = relationship("Transaction") 
     
-    def __init__(self, name:str):  
+    def __init__(self, name:str) -> None:  
         """
         Creates a new Category
         
@@ -17,3 +17,5 @@ class TransactionCategory(Base):
             name: Category of a transaction
         """
         self.name = name
+    def __str__(self) -> str:
+           return f'{self.name}'    
