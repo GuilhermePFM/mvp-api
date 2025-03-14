@@ -5,10 +5,10 @@ from schemas import TransactionSchema, ErrorSchema, ListTransactionsSchema, show
 from logger import logger
 from schemas import *
 
-from apis.users import *
-from apis.transactions import *
+# from apis.users import *
+# from apis.transactions import *
 from config import transaction_tag as transaction_tag
-
+from config import app
 @app.post('/transaction', tags=[transaction_tag],
           responses={"200": TransactionSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_transaction(form: TransactionSchema):
@@ -16,10 +16,10 @@ def add_transaction(form: TransactionSchema):
     """
     transaction = Transaction(
         value=form.value,
-        transaction_date=form.transaction_date,
         user=form.user,
         transaction_type=form.transaction_type,
-        category=form.category,
+        category    =form.category,
+        transaction_date=form.transaction_date,
         )
     logger.debug(f"Adicionando transação: '{transaction}'")
     try:

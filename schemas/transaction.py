@@ -9,10 +9,10 @@ class TransactionSchema(BaseModel):
     """ Define como uma nova transação a ser inserida deve ser representado
     """
     value:float = 100.00
-    transaction_date:datetime = "10/10/2025"
+    transaction_date:datetime = None
     user:str = "Guilherme Machado"
-    transaction_type:str = "Compra"
-    category:str = "Casa"
+    transaction_type:str = "Expense"
+    category:str = "House"
 
 
 class ListTransactionsSchema(BaseModel):
