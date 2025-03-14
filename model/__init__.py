@@ -26,6 +26,31 @@ def create_database_dir(dirname:str, clean=False):
     elif not dirpath.exists():
         os.makedirs(dirpath)
 
+def populate(session):
+    user = User(
+                email="teste@email.com",
+                first_name="Teste User",
+                last_name="Last Name",
+            )
+    session.add(user)
+    category = TransactionCategory(
+                                name="Casa"
+                                )
+    session.add(category)
+    ttype = TransactionType(
+                                type="Despesa"
+                            )
+    session.add(ttype)
+
+    transaction = Transaction(
+                                value=100,
+                                user_id=1,  
+                                transaction_type_id=1,  
+                                transaction_category_id=1
+                            )
+    session.add(transaction)
+    session.commit()
+
 def init_database():
     # Verifica se o diretorio não existe
     if not os.path.exists(DB_PATH):
@@ -46,6 +71,7 @@ def init_database():
 
     # cria as tabelas do banco, caso não existam
     Base.metadata.create_all(engine)
+    populate(Session())
 
     return Session
 
