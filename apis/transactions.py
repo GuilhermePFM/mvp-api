@@ -4,6 +4,8 @@ from model import Session, Transaction, User, TransactionType, TransactionCatego
 from schemas import TransactionSchema, ErrorSchema, ListTransactionsSchema, show_transaction, DeleteTransactionSchema
 from logger import logger
 from schemas import *
+from flask import abort
+
 
 # from apis.users import *
 # from apis.transactions import *
@@ -12,32 +14,52 @@ from config import app
 @app.post('/transaction', tags=[transaction_tag],
           responses={"200": TransactionSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_transaction(form: TransactionSchema):
-    """Adds new transaction to database
     """
-    transaction = Transaction(
-        value=form.value,
-        user=form.user,
-        transaction_type=form.transaction_type,
-        category    =form.category,
-        transaction_date=form.transaction_date,
-        )
-    logger.debug(f"Adicionando transação: '{transaction}'")
+    Adds new transaction to database
+    """
+    db = Session()
     try:
-        session = Session()
-        session.add(transaction)
-        session.commit()
-        logger.debug(f"Adicionado transação: '{transaction}'")
+        email = form.user_email
+        logger.debug(f"Coletando dados sobre user #{email}")
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            abort(404, description=f"User '{form.user}' not found")
+
+        # Find the transaction type by name
+        transaction_type = db.query(TransactionType).filter(TransactionType.type == form.transaction_type).first()
+        if not transaction_type:
+            abort(404, description=f"Transaction type '{form.transaction_type}' not found")
+
+        # Find the category by name
+        category = db.query(TransactionCategory).filter(TransactionCategory.name == form.category).first()
+        if not category:
+            abort(404, description=f"Transaction category '{form.category}' not found")
+
+        transaction = Transaction(
+                                    value=form.value,
+                                    user=user,  
+                                    transaction_type=transaction_type,  
+                                    transaction_category=category,  
+                                    transaction_date=form.transaction_date,
+                                )
+        logger.debug(f"Adicionando transação: '{transaction}'")
+
+        db.add(transaction)
+        db.commit()
+        logger.debug(f"Added transaction: '{transaction}'")
+
+        # db.refresh(transaction)  # Refresh to get the ID
         return show_transaction(transaction), 200
-
+    
     except IntegrityError as e:
-        error_msg = "Transaction already registred"
-        logger.warning(f"Error adding transaction '{transaction}', {error_msg}")
-        return {"mesage": error_msg}, 409
-
+        error_msg = "Transaction already registered"
+        logger.warning(f"Error adding transaction '{form}', {error_msg}")
+        return {"message": error_msg}, 409
+    
     except Exception as e:
         error_msg = "Not possible to add transaction"
-        logger.warning(f"Error adding transaction '{transaction}', {error_msg}")
-        return {"mesage": error_msg}, 400
+        logger.warning(f"Error adding transaction '{form}', {error_msg} - Exception {e}")
+        return {"message": error_msg}, 400
 
 
 @app.get('/transactions', tags=[transaction_tag],

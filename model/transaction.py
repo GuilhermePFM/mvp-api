@@ -6,7 +6,7 @@ from model import Base, User, TransactionType, TransactionCategory
 from sqlalchemy import ForeignKey
 
 class Transaction(Base):
-    __tablename__ = 'transactions'
+    __tablename__ = 'Transaction'
 
     id = Column("pk_transaction", Integer, primary_key=True)
     value = Column(Float)
@@ -15,10 +15,14 @@ class Transaction(Base):
     created_at = Column(DateTime, default=datetime.now())
     
     
-    user = Column(Integer, ForeignKey("User.pk_user"), nullable=False)
 
-    transaction_type = Column(Integer, ForeignKey("TransactionType.pk_transaction_type"), nullable=False)
-    transaction_category = Column(Integer, ForeignKey("TransactionCategory.pk_transaction_category"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.pk_user"))
+    transaction_type_id = Column(Integer, ForeignKey("TransactionType.pk_transaction_type"))
+    transaction_category_id = Column(Integer, ForeignKey("TransactionCategory.pk_transaction_category"))
+    
+    user = relationship("User")
+    transaction_type = relationship("TransactionType")
+    transaction_category = relationship("TransactionCategory")
 
     def __init__(self, value:float, user:User, transaction_type:TransactionType, transaction_category:TransactionCategory, created_at:DateTime = None, transaction_date:DateTime = None):   
         """
