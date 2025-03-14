@@ -10,7 +10,8 @@ class User(Base):
     last_name = Column(String(140), unique=False)
     email = Column(String(200), unique=True)
     
-    transaction = relationship("Transaction") 
+    transaction = relationship("Transaction",       
+                               cascade="all, delete-orphan") 
     
     def __init__(self, first_name:str, last_name:str, email:str):  
         """

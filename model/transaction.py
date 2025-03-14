@@ -19,12 +19,8 @@ class Transaction(Base):
     user_id = Column(Integer, ForeignKey("User.pk_user"))
     transaction_type_id = Column(Integer, ForeignKey("TransactionType.pk_transaction_type"))
     transaction_category_id = Column(Integer, ForeignKey("TransactionCategory.pk_transaction_category"))
-    
-    user = relationship("User")
-    transaction_type = relationship("TransactionType")
-    transaction_category = relationship("TransactionCategory")
 
-    def __init__(self, value:float, user:User, transaction_type:TransactionType, transaction_category:TransactionCategory, created_at:DateTime = None, transaction_date:DateTime = None):   
+    def __init__(self, value:float, user_id:int, transaction_type_id:int, transaction_category_id:int, created_at:DateTime = None, transaction_date:DateTime = None):   
         """
         Creates a new Transaction
         
@@ -36,9 +32,9 @@ class Transaction(Base):
             transaction_category: Category of the transaction
         """
         self.value = value
-        self.user = user
-        self.transaction_type = transaction_type
-        self.category = transaction_category
+        self.user_id = user_id
+        self.transaction_type_id = transaction_type_id
+        self.transaction_category_id = transaction_category_id
 
         if created_at:
             self.created_at = created_at

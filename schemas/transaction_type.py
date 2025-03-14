@@ -7,10 +7,12 @@ class TransactionTypeSchema(BaseModel):
     """ Schema for transaction types
     """
     type: str = 'Income'
+    id: int = 1
 
 def show_type(ttype:TransactionType):
      return {
             "transaction_type": ttype.type,
+            "id": ttype.id,
      }
 
 class ListTransactionTypesSchema(BaseModel):

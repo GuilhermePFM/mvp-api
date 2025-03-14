@@ -1,3 +1,4 @@
+from urllib.parse import unquote
 from sqlalchemy.exc import IntegrityError
 
 from model import Session, Transaction, User, TransactionType, TransactionCategory
@@ -34,12 +35,13 @@ def add_transaction(form: TransactionSchema):
         category = db.query(TransactionCategory).filter(TransactionCategory.name == form.category).first()
         if not category:
             abort(404, description=f"Transaction category '{form.category}' not found")
-
+        
+        #FIXME: category id is entering null. probably some error in the model
         transaction = Transaction(
                                     value=form.value,
-                                    user=user,  
-                                    transaction_type=transaction_type,  
-                                    transaction_category=category,  
+                                    user_id=user.id,  
+                                    transaction_type_id=transaction_type.id,  
+                                    transaction_category_id=category.id,  
                                     transaction_date=form.transaction_date,
                                 )
         logger.debug(f"Adicionando transação: '{transaction}'")
@@ -84,7 +86,7 @@ def delete_transaction(query: SearchTransactionSchema) -> tuple[dict[str, str], 
 
     Return a confirmation message
     """
-    transaction = unquote(unquote(query.id))
+    transaction = query.id
     logger.debug(f"Deleting type {transaction}")
     session = Session()
     count = session.query(Transaction).filter(Transaction.id == id).delete()

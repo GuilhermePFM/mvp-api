@@ -27,9 +27,11 @@ def show_transaction(transaction: Transaction):
     return {
         'value': transaction.value,
         'transaction_date':transaction.transaction_date,
-        'user':transaction.user,
-        'transaction_type':transaction.transaction_type,
-        'category':transaction.category,
+        'user_id':transaction.user_id,
+        'transaction_type_id':transaction.transaction_type_id,
+        'transaction_category_id':transaction.transaction_category_id,
+        'created_at': transaction.created_at,
+        'id': transaction.id
     }
 
 class DeleteTransactionSchema(BaseModel):

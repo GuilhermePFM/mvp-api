@@ -6,11 +6,13 @@ from model.transaction_category import TransactionCategory
 class TransactionCategorySchema(BaseModel):
     """ Schema for transaction category
     """
-    category: str = 'Home'
+    name: str = 'Home'
+    id: int = 1
 
 def show_category(category:TransactionCategory):
      return {
             "transaction_category": category.name,
+            "id": category.id,
      }
 
 class ListTransactionCategoriesSchema(BaseModel):
