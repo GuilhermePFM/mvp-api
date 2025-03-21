@@ -71,7 +71,8 @@ def init_database():
 
     # cria as tabelas do banco, caso não existam
     Base.metadata.create_all(engine)
-    populate(Session())
+    if not database_exists(engine.url):
+        populate(Session())
 
     return Session
 
