@@ -12,7 +12,7 @@ from urllib.parse import unquote
 def create_transaction_category(form: TransactionCategorySchema):
     """Create a transaction category"""
     category = TransactionCategory(
-        form.name,
+        name=form.name,
        )
     logger.debug(f"Adding transaction category: '{category}'")
     try:

@@ -6,8 +6,7 @@ from model.transaction_category import TransactionCategory
 class TransactionCategorySchema(BaseModel):
     """ Schema for transaction category
     """
-    name: str = 'Home'
-    id: int = 1
+    name: str
 
 def show_category(category:TransactionCategory):
      return {
