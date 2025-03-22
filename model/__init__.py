@@ -66,12 +66,13 @@ def init_database():
     Session = sessionmaker(bind=engine)
 
     # cria o banco se ele não existir 
-    if not database_exists(engine.url):
+    database_already_exists = database_exists(engine.url)
+    if not database_already_exists:
         create_database(engine.url) 
 
     # cria as tabelas do banco, caso não existam
     Base.metadata.create_all(engine)
-    if not database_exists(engine.url):
+    if not database_already_exists:
         populate(Session())
 
     return Session

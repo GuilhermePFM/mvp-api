@@ -20,28 +20,12 @@ def add_transaction(form: TransactionSchema):
     """
     db = Session()
     try:
-        email = form.user_email
-        logger.debug(f"Coletando dados sobre user #{email}")
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            abort(404, description=f"User '{form.user}' not found")
-
-        # Find the transaction type by name
-        transaction_type = db.query(TransactionType).filter(TransactionType.type == form.transaction_type).first()
-        if not transaction_type:
-            abort(404, description=f"Transaction type '{form.transaction_type}' not found")
-
-        # Find the category by name
-        category = db.query(TransactionCategory).filter(TransactionCategory.name == form.category).first()
-        if not category:
-            abort(404, description=f"Transaction category '{form.category}' not found")
-        
         #FIXME: category id is entering null. probably some error in the model
         transaction = Transaction(
                                     value=form.value,
-                                    user_id=user.id,  
-                                    transaction_type_id=transaction_type.id,  
-                                    transaction_category_id=category.id,  
+                                    user_id=form.user_id,  
+                                    transaction_type_id=form.transaction_type_id,  
+                                    transaction_category_id=form.category_id,  
                                     transaction_date=form.transaction_date,
                                 )
         logger.debug(f"Adicionando transação: '{transaction}'")
