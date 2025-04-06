@@ -18,7 +18,6 @@ def add_transaction(form: TransactionSchema):
     """
     Adds new transaction to database
     """
-    db = Session()
     try:
         #FIXME: category id is entering null. probably some error in the model
         transaction = Transaction(
@@ -29,9 +28,9 @@ def add_transaction(form: TransactionSchema):
                                     transaction_date=form.transaction_date,
                                 )
         logger.debug(f"Adicionando transação: '{transaction}'")
-
-        db.add(transaction)
-        db.commit()
+        with Session() as session:
+            session.add(transaction)
+            session.commit()
         logger.debug(f"Added transaction: '{transaction}'")
 
         # db.refresh(transaction)  # Refresh to get the ID
@@ -54,8 +53,8 @@ def get_transactions():
     """Get all transactions in the database
     """
     logger.debug(f"Coletando produtos ")
-    session = Session()
-    transactions = session.query(Transaction).all()
+    with Session() as session:
+        transactions = session.query(Transaction).all()
 
     if not transactions:
         return {"transactions": []}, 200
@@ -72,9 +71,9 @@ def delete_transaction(query: SearchTransactionSchema) -> tuple[dict[str, str], 
     """
     transaction = query.id
     logger.debug(f"Deleting type {transaction}")
-    session = Session()
-    count = session.query(Transaction).filter(Transaction.id == id).delete()
-    session.commit()
+    with Session() as session:
+        count = session.query(Transaction).filter(Transaction.id == id).delete()
+        session.commit()
 
     if count > 0:
         logger.debug(f"Transaction #{transaction} deleted")

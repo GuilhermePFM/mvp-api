@@ -19,12 +19,13 @@ def add_user(form: UserSchema):
         last_name=form.last_name,
         email=form.email)
     logger.debug(f"Adicionando user: '{user}'")
+
     try:
-        session = Session()
-        session.add(user)
-        session.commit()
-        logger.debug(f"User successfully added: '{user}'")
-        return show_user(user), 200
+        with Session() as session:
+            session.add(user)
+            session.commit()
+            logger.debug(f"User successfully added: '{user}'")
+            return show_user(user), 200
 
     except IntegrityError as e:
         error_msg = "User already exists"
@@ -45,8 +46,8 @@ def get_user(query: SearchUserSchema):
     """
     email = query.email
     logger.debug(f"Coletando dados sobre user #{email}")
-    session = Session()
-    user = session.query(User).filter(User.email == email).first()
+    with Session() as session:
+        user = session.query(User).filter(User.email == email).first()
 
     if not user:
         error_msg = f"User {email} not found"
@@ -64,8 +65,8 @@ def get_all_users() -> tuple[dict[str, list], int]:
     """
     logger.debug(f"Listing all users")
    
-    session = Session()
-    users = session.query(User).all()
+    with Session() as session:
+        users = session.query(User).all()
 
     if not users:
         return {"users": []}, 200
@@ -85,9 +86,10 @@ def delete_user(query: SearchUserSchema) -> tuple[dict[str, str], int]:
     """
     email = unquote(unquote(query.email))
     logger.debug(f"Deleting User {email}")
-    session = Session()
-    count = session.query(User).filter(User.email == email).delete()
-    session.commit()
+    with Session() as session:
+        session = Session()
+        count = session.query(User).filter(User.email == email).delete()
+        session.commit()
 
     if removed_succesfully(count):
         logger.debug(f"User #{email} deleted")

@@ -17,13 +17,13 @@ def create_transaction_category(form: TransactionCategorySchema):
     logger.debug(f"Adding transaction category: '{category}'")
     try:
         # criando conexão com a base
-        session = Session()
-        # adicionando produto
-        session.add(category)
-        # efetivando o camando de adição de novo item na tabela
-        session.commit()
-        logger.debug(f"Transaction category successfully added: '{category}'")
-        return show_category(category), 200
+        with Session() as session:
+            # adicionando produto
+            session.add(category)
+            # efetivando o camando de adição de novo item na tabela
+            session.commit()
+            logger.debug(f"Transaction category successfully added: '{category}'")
+            return show_category(category), 200
 
     except IntegrityError as e:
         error_msg = "Transaction category already exists"
@@ -42,8 +42,8 @@ def get_all_transaction_categories():
     """Get all transaction categories"""
     logger.debug(f"Listing all Transaction categories")
    
-    session = Session()
-    categories = session.query(TransactionCategory).all()
+    with Session() as session:
+        categories = session.query(TransactionCategory).all()
 
     if not categories:
         return {"users": []}, 200
@@ -59,10 +59,10 @@ def delete_category(query: TransactionCategorySchema) -> tuple[dict[str, str], i
     Return a confirmation message
     """
     category = unquote(unquote(query.category))
-    logger.debug(f"Deleting Category {category}")
-    session = Session()
-    count = session.query(TransactionCategory).filter(TransactionCategory.name == category).delete()
-    session.commit()
+    logger.debug(f"Deleting Category {category}")]
+    with Session() as session:
+        count = session.query(TransactionCategory).filter(TransactionCategory.name == category).delete()
+        session.commit()
 
     if count > 0:
         logger.debug(f"Category #{category} deleted")
