@@ -59,7 +59,7 @@ def delete_category(query: TransactionCategorySchema) -> tuple[dict[str, str], i
     Return a confirmation message
     """
     category = unquote(unquote(query.category))
-    logger.debug(f"Deleting Category {category}")]
+    logger.debug(f"Deleting Category {category}")
     with Session() as session:
         count = session.query(TransactionCategory).filter(TransactionCategory.name == category).delete()
         session.commit()
