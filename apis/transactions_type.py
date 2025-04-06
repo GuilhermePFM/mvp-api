@@ -48,11 +48,11 @@ def get_all_transaction_types():
     with Session() as session:
         ttypes = session.query(TransactionType).all()
 
-    if not ttypes:
-        return {"users": []}, 200
-    else:
-        logger.debug(f"{len(ttypes)} types found")
-        return [show_type(ttype) for ttype in ttypes], 200
+        if not ttypes:
+            return {"users": []}, 200
+        else:
+            logger.debug(f"{len(ttypes)} types found")
+            return [show_type(ttype) for ttype in ttypes], 200
 
 @app.delete('/transaction_type', tags=[tag],
             responses={"200": DeleteTransactionTypeSchema, "404": ErrorSchema})
@@ -67,10 +67,10 @@ def delete_type(query: TransactionTypeSchema) -> tuple[dict[str, str], int]:
         count = session.query(TransactionType).filter(TransactionType.type == ttype).delete()
         session.commit()
 
-    if count > 0:
-        logger.debug(f"Type #{ttype} deleted")
-        return {"mesage": "Type removed successfully", "type": ttype}, 200
-    else:
-        error_msg = "Type not found"
-        logger.warning(f"Error removing type '{ttype}', {error_msg}")
-        return {"mesage": error_msg}, 404
+        if count > 0:
+            logger.debug(f"Type #{ttype} deleted")
+            return {"mesage": "Type removed successfully", "type": ttype}, 200
+        else:
+            error_msg = "Type not found"
+            logger.warning(f"Error removing type '{ttype}', {error_msg}")
+            return {"mesage": error_msg}, 404

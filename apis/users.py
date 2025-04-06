@@ -49,13 +49,13 @@ def get_user(query: SearchUserSchema):
     with Session() as session:
         user = session.query(User).filter(User.email == email).first()
 
-    if not user:
-        error_msg = f"User {email} not found"
-        logger.warning(f"Error searching for user '{email}', {error_msg}")
-        return {"mesage": error_msg}, 404
-    else:
-        logger.debug(f"User found: '{user.email}'")
-        return show_user(user), 200
+        if not user:
+            error_msg = f"User {email} not found"
+            logger.warning(f"Error searching for user '{email}', {error_msg}")
+            return {"mesage": error_msg}, 404
+        else:
+            logger.debug(f"User found: '{user.email}'")
+            return show_user(user), 200
 
 @app.get('/users', tags=[tag],
           responses={"200": ListUserSchema, "409": ErrorSchema, "400": ErrorSchema})
@@ -68,11 +68,11 @@ def get_all_users() -> tuple[dict[str, list], int]:
     with Session() as session:
         users = session.query(User).all()
 
-    if not users:
-        return {"users": []}, 200
-    else:
-        logger.debug(f"{len(users)} users found")
-        return [show_user(user) for user in users], 200
+        if not users:
+            return {"users": []}, 200
+        else:
+            logger.debug(f"{len(users)} users found")
+            return [show_user(user) for user in users], 200
 
 def removed_succesfully(count):
     return count > 0
@@ -91,10 +91,10 @@ def delete_user(query: SearchUserSchema) -> tuple[dict[str, str], int]:
         count = session.query(User).filter(User.email == email).delete()
         session.commit()
 
-    if removed_succesfully(count):
-        logger.debug(f"User #{email} deleted")
-        return {"mesage": "User removed successfully", "email": email}, 200
-    else:
-        error_msg = "User not found"
-        logger.warning(f"Error deleting user '{email}', {error_msg}")
-        return {"mesage": error_msg}, 404
+        if removed_succesfully(count):
+            logger.debug(f"User #{email} deleted")
+            return {"mesage": "User removed successfully", "email": email}, 200
+        else:
+            error_msg = "User not found"
+            logger.warning(f"Error deleting user '{email}', {error_msg}")
+            return {"mesage": error_msg}, 404

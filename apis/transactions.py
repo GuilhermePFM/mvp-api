@@ -31,10 +31,10 @@ def add_transaction(form: TransactionSchema):
         with Session() as session:
             session.add(transaction)
             session.commit()
-        logger.debug(f"Added transaction: '{transaction}'")
+            logger.debug(f"Added transaction: '{transaction}'")
 
-        # db.refresh(transaction)  # Refresh to get the ID
-        return show_transaction(transaction), 200
+            # db.refresh(transaction)  # Refresh to get the ID
+            return show_transaction(transaction), 200
     
     except IntegrityError as e:
         error_msg = "Transaction already registered"
@@ -56,11 +56,11 @@ def get_transactions():
     with Session() as session:
         transactions = session.query(Transaction).all()
 
-    if not transactions:
-        return {"transactions": []}, 200
-    else:
-        logger.debug(f"{len(transactions)} transactions found")
-        return [show_transaction(transaction) for transaction in transactions], 200
+        if not transactions:
+            return {"transactions": []}, 200
+        else:
+            logger.debug(f"{len(transactions)} transactions found")
+            return [show_transaction(transaction) for transaction in transactions], 200
 
 @app.delete('/transaction', tags=[transaction_tag],
             responses={"200": DeleteTransactionSchema, "404": ErrorSchema})
@@ -75,10 +75,10 @@ def delete_transaction(query: SearchTransactionSchema) -> tuple[dict[str, str], 
         count = session.query(Transaction).filter(Transaction.id == id).delete()
         session.commit()
 
-    if count > 0:
-        logger.debug(f"Transaction #{transaction} deleted")
-        return {"mesage": "Type removed successfully", "type": transaction}, 200
-    else:
-        error_msg = "Transaction not found"
-        logger.warning(f"Error removing transaction '{transaction}', {error_msg}")
-        return {"mesage": error_msg}, 404
+        if count > 0:
+            logger.debug(f"Transaction #{transaction} deleted")
+            return {"mesage": "Type removed successfully", "type": transaction}, 200
+        else:
+            error_msg = "Transaction not found"
+            logger.warning(f"Error removing transaction '{transaction}', {error_msg}")
+            return {"mesage": error_msg}, 404

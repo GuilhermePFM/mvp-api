@@ -44,12 +44,11 @@ def get_all_transaction_categories():
    
     with Session() as session:
         categories = session.query(TransactionCategory).all()
-
-    if not categories:
-        return {"users": []}, 200
-    else:
-        logger.debug(f"{len(categories)} types found")
-        return [show_category(cat) for cat in categories], 200
+        if not categories:
+            return {"users": []}, 200
+        else:
+            logger.debug(f"{len(categories)} types found")
+            return [show_category(cat) for cat in categories], 200
 
 @app.delete('/transaction_category', tags=[tag],
             responses={"200": DeleteTransactionCategorySchema, "404": ErrorSchema})
@@ -64,10 +63,10 @@ def delete_category(query: TransactionCategorySchema) -> tuple[dict[str, str], i
         count = session.query(TransactionCategory).filter(TransactionCategory.name == category).delete()
         session.commit()
 
-    if count > 0:
-        logger.debug(f"Category #{category} deleted")
-        return {"mesage": "Category removed successfully", "category": category}, 200
-    else:
-        error_msg = "Category not found"
-        logger.warning(f"Error removing category '{category}', {error_msg}")
-        return {"mesage": error_msg}, 404
+        if count > 0:
+            logger.debug(f"Category #{category} deleted")
+            return {"mesage": "Category removed successfully", "category": category}, 200
+        else:
+            error_msg = "Category not found"
+            logger.warning(f"Error removing category '{category}', {error_msg}")
+            return {"mesage": error_msg}, 404
