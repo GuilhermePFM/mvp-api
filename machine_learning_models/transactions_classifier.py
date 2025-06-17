@@ -83,4 +83,5 @@ class TransactionsClassifier(MLModel):
     """
 
     def __init__(self, model_path: Path=MODEL_REPOSITORY_PATH):
-        super().__init__(model_path)
+        self.model_file_name: str = "classification_model.pkl"
+        super().__init__(model_path / self.model_file_name)
