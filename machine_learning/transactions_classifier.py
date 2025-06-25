@@ -3,12 +3,8 @@ import os
 from pathlib import Path
 import pickle
 from logging import getLogger
-from typing import Union
-from typing import ClassVar
 from typing import Protocol, Optional
 from machine_learning.utils import load_joblib, load_pickle
-from machine_learning.transactions_classification.lib import feature_engineering
-from sklearn.utils.validation import check_is_fitted
 
 
 MODEL_REPOSITORY_PATH = Path(os.getenv("MODEL_PATH", os.path.dirname(__file__))) / "transactions_classification" / 'models'
@@ -100,7 +96,7 @@ class MLModel(ABC):
         Check if the input data needs preprocessing.
         This can be overridden by subclasses if needed.
         """
-        return self.preprocessor.validate(X) if self.preprocessor else False
+        return X.shape[1] == 3 if self.preprocessor else False
     
     def preprocess(self, X):
         """
@@ -110,6 +106,8 @@ class MLModel(ABC):
             message = "Model is not loaded. Call load() first."
             getLogger(self.__class__.__name__).error(message)
             raise RuntimeError(message)
+        
+        X= X.rename(columns = {"value":'Valor', "date": 'Data', "description":'Descrição'})
         
         return self.preprocessor.transform(X)
 
