@@ -11,7 +11,7 @@ from machine_learning.transactions_classification.lib import feature_engineering
 from sklearn.utils.validation import check_is_fitted
 
 
-MODEL_REPOSITORY_PATH = Path(os.getenv("MODEL_PATH", os.path.dirname(__file__))) / "transactions_classification" / 'model'
+MODEL_REPOSITORY_PATH = Path(os.getenv("MODEL_PATH", os.path.dirname(__file__))) / "transactions_classification" / 'models'
 
 
 # Define a protocol for scikit-learn models that are both classifiers and base estimators
@@ -124,5 +124,5 @@ class TransactionsClassifier(MLModel):
         self.preprocessor_file_name: str = "classification_preprocessor.pkl"
         self.repository_path: Path = repository_path
         model_path = repository_path / self.model_file_name
-        preprocessor_path = repository_path / self.preprocessor_file_name
+        preprocessor_path = repository_path.parent / "pipelines" / self.preprocessor_file_name
         super().__init__(model_path, preprocessor_path)

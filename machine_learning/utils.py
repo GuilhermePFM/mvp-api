@@ -2,7 +2,6 @@ import pickle
 from pathlib import Path
 import joblib
 from typing import Any
-from machine_learning.transactions_classification.lib import feature_engineering
 
 
 def load_pickle(path) -> Any:

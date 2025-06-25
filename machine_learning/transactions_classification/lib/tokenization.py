@@ -1,9 +1,9 @@
 from datasets import Dataset
 from transformers import AutoTokenizer
 import pandas as pd
-from feature_engineering import TEXT_FEATURES
 import torch
 from transformers import AutoModel
+from machine_learning.transactions_classification.lib.feature_engineering import TEXT_FEATURES
 
 
 MODEL_NAME = "distilbert-base-uncased"

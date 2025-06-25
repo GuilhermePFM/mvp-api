@@ -4,11 +4,11 @@ from sklearn.preprocessing import (
     StandardScaler,
     Normalizer,
 )
-from tokenization import tokenized_pytorch_tensors
 from sklearn.preprocessing import FunctionTransformer
-from tokenization import hidden_state_from_text_inputs
-from feature_engineering import add_keyword_hints, add_date_features
 from sklearn.pipeline import FeatureUnion
+from machine_learning.transactions_classification.lib.feature_engineering import add_keyword_hints, add_date_features, NUMERIC_FEATURES, DATE_FEATURES, TEXT_FEATURES
+from machine_learning.transactions_classification.lib.tokenization import hidden_state_from_text_inputs, tokenized_pytorch_tensors
+
 
 VERBOSE = False
 
@@ -43,7 +43,7 @@ def date_transformer():
                           verbose=VERBOSE
     )
 
-def get_preprocessing_transformer(NUMERIC_FEATURES, DATE_FEATURES, TEXT_FEATURES, VERBOSE=False ) -> ColumnTransformer:
+def get_preprocessing_transformer(VERBOSE=False ) -> ColumnTransformer:
     preprocessor = make_column_transformer(
                     ( StandardScaler(), NUMERIC_FEATURES),
                     ( date_transformer(), DATE_FEATURES),
