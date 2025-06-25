@@ -13,6 +13,7 @@ from apis.users import *
 from apis.transactions import *
 from apis.transactions_type import *
 from apis.transactions_category import *
+from apis.batch_classifier import *
 from config import *
 
 
