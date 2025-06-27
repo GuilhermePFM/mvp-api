@@ -1,17 +1,14 @@
 from urllib.parse import unquote
 from sqlalchemy.exc import IntegrityError
 
-from model import Session, Transaction, User, TransactionType, TransactionCategory
+from model import Session, Transaction
 from schemas import TransactionSchema, ErrorSchema, ListTransactionsSchema, show_transaction, DeleteTransactionSchema
 from logger import logger
 from schemas import *
-from flask import abort
-
-
-# from apis.users import *
-# from apis.transactions import *
 from config import transaction_tag as transaction_tag
 from config import app
+
+
 @app.post('/transaction', tags=[transaction_tag],
           responses={"200": TransactionSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_transaction(form: TransactionSchema):
@@ -26,6 +23,7 @@ def add_transaction(form: TransactionSchema):
                                     transaction_type_id=form.transaction_type_id,  
                                     transaction_category_id=form.category_id,  
                                     transaction_date=form.transaction_date,
+                                    description=form.description,
                                 )
         logger.debug(f"Adicionando transação: '{transaction}'")
         with Session() as session:
@@ -44,6 +42,38 @@ def add_transaction(form: TransactionSchema):
     except Exception as e:
         error_msg = "Not possible to add transaction"
         logger.warning(f"Error adding transaction '{form}', {error_msg} - Exception {e}")
+        return {"message": error_msg}, 400
+
+
+@app.post('/transactions', tags=[transaction_tag],
+          responses={"200": ListTransactionsSchema, "409": ErrorSchema, "400": ErrorSchema})
+def add_transactions_list(body: ListTransactionsSchema):
+    """
+    Adds new transaction to database
+    """
+    try:
+        #FIXME: category id is entering null. probably some error in the model
+        transactions = []
+        with Session() as session:
+            for transaction_row in body.transactions:
+                transaction = Transaction(**transaction_row.model_dump())
+                logger.debug(f"Adicionando transação: '{transaction_row}'")
+                session.add(transaction)
+                session.commit()
+                logger.debug(f"Added transaction: '{transaction_row}'")
+                transactions.append(transaction)
+
+        # db.refresh(transaction)  # Refresh to get the ID
+        return body.model_dump(), 200
+    
+    except IntegrityError as e:
+        error_msg = "Transaction already registered"
+        logger.warning(f"Error adding transaction '{body}', {error_msg}")
+        return {"message": error_msg}, 409
+    
+    except Exception as e:
+        error_msg = "Not possible to add transaction"
+        logger.warning(f"Error adding transaction '{body}', {error_msg} - Exception {e}")
         return {"message": error_msg}, 400
 
 

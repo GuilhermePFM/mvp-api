@@ -46,7 +46,8 @@ def populate(session):
                                 value=100,
                                 user_id=1,  
                                 transaction_type_id=1,  
-                                transaction_category_id=1
+                                transaction_category_id=1,
+                                description="one time purchase",
                             )
     session.add(transaction)
     session.commit()
