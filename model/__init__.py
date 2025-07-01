@@ -27,27 +27,46 @@ def create_database_dir(dirname:str, clean=False):
         os.makedirs(dirpath)
 
 def populate(session):
+    
+    ml_types = ['Despesa', 'Receita']
+    for type in ml_types:
+        type = TransactionType(
+                                type=type
+                                )
+        session.add(type)
+
     user = User(
-                email="teste@email.com",
-                first_name="Teste User",
-                last_name="Last Name",
+                email="uncle@bob.com",
+                first_name="Bob",
+                last_name="Uncle",
             )
     session.add(user)
-    category = TransactionCategory(
-                                name="Casa"
+    user = User(
+                email="charlie@bob.com",
+                first_name="John",
+                last_name="Doe",
+            )
+    session.add(user)
+
+    ml_categories = ['Presentes', 'Autocuidado - produtos', 'Autocuidado - serviços',
+       'Alimentação cotidiana', 'Compras', 'Saúde',
+       'Alimentação especial', 'Bares e rolês', 'Entretenimento geral',
+       'Viagem ', 'Gui', 'Casa', 'Rendimentos', 'Reembolsos', 'IT',
+       'Transporte', 'Trabalho', 'Salário', 'Outros', 'Decoração',
+       'Outros Ganhos', 'Educação', 'outros ganhos', 'Ocasiões especiais',
+       'Investimento']
+    for category in ml_categories:
+        category = TransactionCategory(
+                                name=category
                                 )
-    session.add(category)
-    ttype = TransactionType(
-                                type="Despesa"
-                            )
-    session.add(ttype)
+        session.add(category)
 
     transaction = Transaction(
                                 value=100,
                                 user_id=1,  
                                 transaction_type_id=1,  
                                 transaction_category_id=1,
-                                description="one time purchase",
+                                description="one time purchase"
                             )
     session.add(transaction)
     session.commit()
