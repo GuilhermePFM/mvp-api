@@ -8,7 +8,7 @@ class Transaction(Base):
 
     id = Column("pk_transaction", Integer, primary_key=True)
     value = Column(Float, nullable=False)
-    
+    description = Column(String, nullable=True)
     transaction_date = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     
@@ -22,7 +22,7 @@ class Transaction(Base):
     transaction_type = relationship("TransactionType", back_populates="transaction")
     transaction_category = relationship("TransactionCategory", back_populates="transaction")
 
-    def __init__(self, value: float, user_id: int, transaction_type_id: int, transaction_category_id: int, created_at: DateTime = None, transaction_date: DateTime = None):   
+    def __init__(self, value: float, user_id: int, transaction_type_id: int, transaction_category_id: int, created_at: DateTime = None, transaction_date: DateTime = None, description: str = ""):   
         """
         Creates a new Transaction
         
@@ -37,6 +37,7 @@ class Transaction(Base):
         self.user_id = user_id
         self.transaction_type_id = transaction_type_id
         self.transaction_category_id = transaction_category_id
+        self.description = description
 
         if created_at is not None:
             self.created_at = created_at

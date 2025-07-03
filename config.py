@@ -20,3 +20,6 @@ transaction_category_tag = Tag(name="Transaction Category",
 
 transaction_type_tag = Tag(name="Transaction Types",
                             description="Create and modifies transaction typees")
+
+classification_model_tag = Tag(name="Classification Model",
+                            description="Runs classifier on batch of transactions")
