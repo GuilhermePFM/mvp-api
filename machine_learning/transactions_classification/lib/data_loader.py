@@ -1,8 +1,11 @@
 from pathlib import Path
 import pandas as pd
 from machine_learning.transactions_classification.lib.feature_engineering import TARGET_VARIABLE
+from security.dataset import decrypt_dataset
+from machine_learning.utils import load_pickle
 
-DATASET_NAME = 'database_classified.parquet'
+
+DATASET_NAME = 'enc_treated_database.parquet'
 
 
 def remove_class_with_few_samples(complete_dataset: pd.DataFrame, min_samples: int) -> pd.DataFrame:
@@ -58,7 +61,7 @@ def treat_dataset(complete_dataset: pd.DataFrame):
     return complete_dataset
 
 
-def load_raw_dataset(root_dir:Path):
+def load_raw_dataset(root_dir:Path, key):
     """
     Load the dataset.
     Args:
@@ -68,12 +71,17 @@ def load_raw_dataset(root_dir:Path):
     """
 
     # Load the dataset
-    complete_dataset = pd.read_parquet(root_dir / DATASET_NAME)
+    encrypted_dataset = pd.read_parquet(root_dir / DATASET_NAME)
 
-    return complete_dataset
+    # key = b'rH9dmOzCXcBjkDvtK2voZaBcz6M6ELvlZe8D3BD0_7M='
+
+    dtypes = load_pickle(root_dir / 'dtypes.pkl')
+    dataset = decrypt_dataset(encrypted_dataset, key, dtypes)
+
+    return dataset
 
 
-def load_treated_dataset(root_dir:Path):
+def load_treated_dataset(root_dir:Path, key):
     """
     Load the dataset.
     Args:
@@ -81,5 +89,6 @@ def load_treated_dataset(root_dir:Path):
     Returns:
         complete_dataset (pd.DataFrame): Complete dataset treated
     """
-    df = load_raw_dataset(root_dir)
+    df = load_raw_dataset(root_dir, key)
+    
     return treat_dataset(df)
