@@ -65,6 +65,10 @@ def y_predicted(fixtures_path, test_seed):
 def balanced_accuracy_score_result(fixtures_path, test_seed):
     return load_pickle(fixtures_path/ f"balanced_accuracy_score_seed_{test_seed}.pkl")
 
+@fixture
+def f1_weighted_score_result(fixtures_path, test_seed):
+    return load_pickle(fixtures_path/ f"f1_weighted_score_seed_{test_seed}.pkl")
+
 
 def test_predicting_with_model(classifier_model: TransactionsClassifier, X_test, y_predicted, test_seed):
     classifier_model.load()
@@ -86,8 +90,12 @@ def test_model_average_accuracy(classifier_model: TransactionsClassifier, X_test
     assert np.isclose(score, balanced_accuracy_score_result), "Accuracy score should match."
 
 
-def test_model_training():
-    assert True
+def test_f1_weighted_score(classifier_model: TransactionsClassifier, X_test, f1_weighted_score_result, y_encoder, y_test, test_seed):
+    classifier_model.load()
+    np.random.seed(test_seed)
+    y_pred_model = classifier_model.predict(X_test)
+    score = balanced_accuracy_score(y_test, y_encoder.transform(y_pred_model))
+    assert np.isclose(score, f1_weighted_score_result), "Accuracy score should match."
 
 
 def test_preprocessing_dataset(classifier_model: TransactionsClassifier, X_test, X_test_raw):
