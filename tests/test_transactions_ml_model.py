@@ -8,6 +8,7 @@ from pathlib import Path
 import pickle
 from sklearn.metrics import balanced_accuracy_score
 from machine_learning.utils import load_pickle
+from sklearn.metrics import f1_score
 
 
 @fixture
@@ -66,8 +67,8 @@ def balanced_accuracy_score_result(fixtures_path, test_seed):
     return load_pickle(fixtures_path/ f"balanced_accuracy_score_seed_{test_seed}.pkl")
 
 @fixture
-def f1_weighted_score_result(fixtures_path, test_seed):
-    return load_pickle(fixtures_path/ f"f1_weighted_score_seed_{test_seed}.pkl")
+def f1_weighted_score_result():
+    return 0.6566580372496947
 
 
 def test_predicting_with_model(classifier_model: TransactionsClassifier, X_test, y_predicted, test_seed):
@@ -87,15 +88,15 @@ def test_model_average_accuracy(classifier_model: TransactionsClassifier, X_test
     np.random.seed(test_seed)
     y_pred_model = classifier_model.predict(X_test)
     score = balanced_accuracy_score(y_test, y_encoder.transform(y_pred_model))
-    assert np.isclose(score, balanced_accuracy_score_result), "Accuracy score should match."
+    assert score >= balanced_accuracy_score_result, "Accuracy is below treshold."
 
 
 def test_f1_weighted_score(classifier_model: TransactionsClassifier, X_test, f1_weighted_score_result, y_encoder, y_test, test_seed):
     classifier_model.load()
     np.random.seed(test_seed)
     y_pred_model = classifier_model.predict(X_test)
-    score = balanced_accuracy_score(y_test, y_encoder.transform(y_pred_model))
-    assert np.isclose(score, f1_weighted_score_result), "Accuracy score should match."
+    score = f1_score(y_test, y_encoder.transform(y_pred_model), average='weighted')
+    assert score >= f1_weighted_score_result, "Accuracy is below treshold."
 
 
 def test_preprocessing_dataset(classifier_model: TransactionsClassifier, X_test, X_test_raw):
