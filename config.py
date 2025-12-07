@@ -23,3 +23,6 @@ transaction_type_tag = Tag(name="Transaction Types",
 
 classification_model_tag = Tag(name="Classification Model",
                             description="Runs classifier on batch of transactions")
+
+embedding_tag = Tag(name="Embedding",
+                    description="Creates an embedding for a transaction description, using the Google Gemini API")
