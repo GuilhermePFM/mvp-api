@@ -2,8 +2,9 @@
 
 Este é o repositório do back-end do projeto **Controle Financeiro**, desenvolvido como parte do MVP (Minimum Viable Product) para a Pós-Graduação em Engenharia de Software da PUC Rio. O objetivo do projeto é fornecer uma plataforma inteligente para gerenciar finanças pessoais, permitindo o controle de transações, categorias e usuários de forma eficiente, com **classificação automática** de transações utilizando **Machine Learning**.
 
-O repositório do Front-end deste projeto é [https://github.com/GuilhermePFM/mvp-front-end](https://github.com/GuilhermePFM/mvp-front-end).
-
+Outros repositórios associados:
+* Front-end [https://github.com/GuilhermePFM/mvp-front-end](https://github.com/GuilhermePFM/mvp-front-end).
+* Embedding API [https://github.com/GuilhermePFM/mvp-front-end](https://github.com/GuilhermePFM/mvp-embedding).
 ---
 
 ## Índice
@@ -45,6 +46,16 @@ O repositório do Front-end deste projeto é [https://github.com/GuilhermePFM/mv
     - [1. **Inicie a Aplicação**](#1-inicie-a-aplicação)
     - [2. **Acesse a API**](#2-acesse-a-api)
     - [3. **Acesse a Documentação Interativa**](#3-acesse-a-documentação-interativa)
+  - [🐳 Implantação com Docker](#-implantação-com-docker)
+    - [Pré-requisitos](#pré-requisitos)
+    - [Desenvolvimento Local com Docker](#desenvolvimento-local-com-docker)
+      - [1. **Configure as Variáveis de Ambiente**](#1-configure-as-variáveis-de-ambiente)
+      - [2. **Build e Inicie os Containers**](#2-build-e-inicie-os-containers)
+      - [3. **Verifique os Logs**](#3-verifique-os-logs)
+      - [4. **Acesse a Aplicação**](#4-acesse-a-aplicação)
+      - [5. **Parar a Aplicação**](#5-parar-a-aplicação)
+    - [Volumes e Persistência de Dados](#volumes-e-persistência-de-dados)
+    - [Portas Expostas](#portas-expostas)
   - [Endpoints da API](#endpoints-da-api)
     - [Documentação Interativa](#documentação-interativa)
     - [Principais Endpoints](#principais-endpoints)
@@ -76,28 +87,15 @@ O diferencial deste sistema é a **classificação automática de transações**
 
 O projeto **Controle Financeiro** é composto por **três microserviços** que trabalham em conjunto:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     ARQUITETURA DO SISTEMA                       │
-└─────────────────────────────────────────────────────────────────┘
-
-┌──────────────────┐          ┌──────────────────┐
-│   1. Interface   │ ◄───────►│  2. Backend API  │ (Este Repositório)
-│   (Front-end)    │          │   Flask + ML     │
-└──────────────────┘          └────────┬─────────┘
-                                       │
-                                       ▼
-                              ┌────────────────────┐
-                              │  3. API Embeddings │
-                              │  Google Gemini API │
-                              └────────────────────┘
-```
+![alt text](backend.png)
 
 **1. Interface (Front-end):** Aplicação web onde o usuário interage, faz upload de transações e visualiza os resultados.
 
 **2. Backend API (Este Repositório):** Serviço principal que gerencia dados, executa classificações e coordena a comunicação entre os serviços.
 
 **3. API de Embeddings:** Serviço externo (Google Gemini API) que gera embeddings semânticos das descrições das transações para melhorar a precisão da classificação.
+
+
 
 ---
 
@@ -438,6 +436,79 @@ A interface Swagger estará disponível em:
 - **ReDoc**: [http://127.0.0.1:5000/openapi/redoc](http://127.0.0.1:5000/openapi/redoc)
 
 ---
+
+## 🐳 Implantação com Docker
+
+Docker permite executar a aplicação em um ambiente isolado e consistente, facilitando o desenvolvimento e a implantação em produção.
+
+### Pré-requisitos
+
+- **Docker**: [Instalar Docker](https://docs.docker.com/get-docker/)
+- **Docker Compose**: [Instalar Docker Compose](https://docs.docker.com/compose/install/)
+
+### Desenvolvimento Local com Docker
+
+Para executar a aplicação em ambiente de desenvolvimento usando Docker:
+
+#### 1. **Configure as Variáveis de Ambiente**
+```bash
+# Copie o arquivo de exemplo
+cp env.example .env
+
+# Edite o arquivo .env e adicione suas chaves
+# IMPORTANTE: Adicione sua GEMINI_API_KEY
+```
+
+#### 2. **Build e Inicie os Containers**
+```bash
+docker-compose up -d
+```
+
+Este comando irá:
+- Construir a imagem Docker da aplicação
+- Iniciar o container em segundo plano (`-d` = detached)
+- Montar volumes para persistência de dados
+
+#### 3. **Verifique os Logs**
+```bash
+# Ver logs em tempo real
+docker-compose logs -f
+
+# Ver logs apenas do serviço app
+docker-compose logs -f app
+```
+
+#### 4. **Acesse a Aplicação**
+- **API**: [http://localhost:5000](http://localhost:5000)
+- **Swagger UI**: [http://localhost:5000/openapi/swagger](http://localhost:5000/openapi/swagger)
+
+#### 5. **Parar a Aplicação**
+```bash
+# Parar containers (mantém volumes)
+docker-compose down
+
+# Parar e remover volumes (⚠️ apaga dados)
+docker-compose down -v
+```
+
+### Volumes e Persistência de Dados
+
+O Docker está configurado com os seguintes volumes para garantir persistência:
+
+| Volume | Diretório Host | Diretório Container | Descrição |
+|--------|---------------|---------------------|-----------|
+| **Database** | `./database/` | `/app/database/` | Banco de dados SQLite |
+| **Logs** | `./log/` | `/app/log/` | Logs da aplicação e Gunicorn |
+| **Env** | `./.env` | `/app/.env` | Variáveis de ambiente (read-only) |
+
+**Importante**: Os dados persistem mesmo após `docker-compose down`. Use `docker-compose down -v` apenas se quiser apagar todos os dados.
+
+### Portas Expostas
+
+| Serviço | Porta Host | Porta Container | Descrição |
+|---------|-----------|-----------------|-----------|
+| **API** | 5000 | 5000 | Flask/Gunicorn API |
+
 
 ## Endpoints da API
 

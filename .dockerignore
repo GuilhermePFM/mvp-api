@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables (will be mounted as volume)
+.env
+.env.*
+
+# Logs (will be mounted as volume)
+log/
+*.log
+
+# Database (will be mounted as volume)
+database/
+*.db
+*.sqlite
+*.sqlite3
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+tests/
+*.ipynb
+
+# Documentation (not needed in container)
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks (development only)
+*.ipynb
+.ipynb_checkpoints/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
