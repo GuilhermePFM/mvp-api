@@ -14,7 +14,6 @@ def add_keyword_hints(complete_dataset):
 
 
 def add_date_features(complete_dataset):
-    print(complete_dataset.head())
     complete_dataset['day'] = complete_dataset['Data'].dt.day
     complete_dataset['month'] = complete_dataset['Data'].dt.month
     complete_dataset.drop('Data', inplace=True, axis=1)

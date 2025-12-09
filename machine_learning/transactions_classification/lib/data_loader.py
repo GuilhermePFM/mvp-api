@@ -53,10 +53,16 @@ def treat_dataset(complete_dataset: pd.DataFrame):
     complete_dataset = treat_text(complete_dataset)
 
     # remove ID', 'Data', 'conta', 'Descrição', 'Valor', 'origem'
-    complete_dataset.drop(columns=['conta', 'ID', 'origem'], inplace=True, axis=1)
+    try:
+        complete_dataset.drop(columns=['conta', 'ID', 'origem'], inplace=True, axis=1)
+    except KeyError:
+        pass
     
     # for the classification models, the number of samples for each class must be greater than 2
-    complete_dataset = remove_class_with_few_samples(complete_dataset, min_samples = 5)
+    try:
+        complete_dataset = remove_class_with_few_samples(complete_dataset, min_samples = 5)
+    except ValueError:
+        pass
 
     return complete_dataset
 
@@ -72,8 +78,6 @@ def load_raw_dataset(root_dir:Path, key):
 
     # Load the dataset
     encrypted_dataset = pd.read_parquet(root_dir / DATASET_NAME)
-
-    # key = b'rH9dmOzCXcBjkDvtK2voZaBcz6M6ELvlZe8D3BD0_7M='
 
     dtypes = load_pickle(root_dir / 'dtypes.pkl')
     dataset = decrypt_dataset(encrypted_dataset, key, dtypes)
