@@ -21,7 +21,7 @@ fi
 
 # Check if ML models exist
 echo "🤖 Checking ML models..."
-MODEL_PATH="${MODEL_PATH:-/app/machine_learning/transactions_classification/models}"
+MODEL_PATH="${MODEL_PATH:-/app/machine_learning}"
 
 if [ -f "$MODEL_PATH/classification_model.pkl" ]; then
     echo "✅ ML model found at $MODEL_PATH/classification_model.pkl"

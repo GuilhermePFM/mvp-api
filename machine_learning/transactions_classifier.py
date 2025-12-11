@@ -118,7 +118,7 @@ class TransactionsClassifier(MLModel):
     """
 
     def __init__(self, repository_path: Path = MODEL_REPOSITORY_PATH):
-        self.model_file_name: str = "classification_model.pkl"
+        self.model_file_name: str = "embedding_classification_model.pkl"
         self.preprocessor_file_name: str = "classification_preprocessor.pkl"
         self.repository_path: Path = repository_path
         model_path = repository_path / self.model_file_name
