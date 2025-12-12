@@ -36,9 +36,9 @@ if [ "$WORKER_TYPE" != "api" ]; then
     
     # Wait for Kafka to be ready
     echo "⏳ Waiting for Kafka at $KAFKA_BROKER_ADDRESS..."
-    timeout 60 bash -c 'until nc -z ${KAFKA_BROKER_ADDRESS%%:*} ${KAFKA_BROKER_ADDRESS##*:}; do sleep 2; done' || {
-        echo "⚠️  WARNING: Kafka may not be ready, continuing anyway..."
-    }
+    timeout 60 bash -c 'until echo > /dev/tcp/${KAFKA_BROKER_ADDRESS%%:*}/${KAFKA_BROKER_ADDRESS##*:} 2>/dev/null; do sleep 2; done' || {
+    echo "⚠️  WARNING: Kafka may not be ready, continuing anyway..."
+}
 fi
 
 # Check if ML models exist (for API and classification worker)
