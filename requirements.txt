@@ -42,4 +42,4 @@ python-dotenv==1.2.1
 gunicorn==21.2.0
 
 # Kafka
-quixstreams==2.4
+quixstreams==3.23.1
