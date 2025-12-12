@@ -3,4 +3,5 @@ from schemas.user import UserSchema, show_user, SearchUserSchema, ListUserSchema
 from schemas.error import ErrorSchema
 from schemas.transaction_type import show_type, TransactionTypeSchema, ListTransactionTypesSchema, DeleteTransactionTypeSchema
 from schemas.transaction_category import show_category, TransactionCategorySchema, ListTransactionCategoriesSchema,DeleteTransactionCategorySchema
-from schemas.batch_classifier import BatchClassifierListSchema
+from schemas.batch_classifier import BatchClassifierListSchema, BatchClassifierRowSchema
+from schemas.batch_job import BatchClassifyAsyncRequest, BatchClassifyAsyncResponse, BatchJobStatusResponse

@@ -9,6 +9,7 @@ from model.user import User
 from model.transaction_category import TransactionCategory
 from model.transaction_type import TransactionType
 from model.transaction import Transaction
+from model.batch_job import BatchJob, JobStatus
 from pathlib import Path
 
 
