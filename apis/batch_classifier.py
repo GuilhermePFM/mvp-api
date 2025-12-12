@@ -8,7 +8,8 @@ from config import app
 from flask import request, json
 from pydantic import ValidationError
 from machine_learning.transactions_classifier import TransactionsClassifier
-
+from machine_learning.transactions_classification.lib.external_embedding_api import create_embeddings_api
+import pandas as pd
 
 @app.post('/batchclassifier', tags=[tag],
           responses={"200": BatchClassifierListSchema, "500": ErrorSchema, "400": ErrorSchema})
@@ -18,14 +19,24 @@ def run_classifier(body: BatchClassifierListSchema):
     """
     try:
         logger.debug(f"Running classifier")
-        model = TransactionsClassifier()
+
+        # get embeddings from the external API
+        embeddings = create_embeddings_api([i.description for i in body.transactions])
+        embeddings_df = pd.DataFrame(embeddings)
+
+        # create a dataframe with the data
         data = [i.model_dump() for i in body.transactions]
-        import pandas as pd
         df =         pd.DataFrame(data)
         df = df.drop(["user",'classification'], axis=1)
-        classifications = model.predict(df)
-        
 
+        # add embeddings to the dataframe
+        df = pd.concat([df, embeddings_df], axis=1)
+
+        # run model classification
+        model = TransactionsClassifier()
+        classifications = model.predict(df)
+
+        # create a list of classified data
         classified_data = [{**row.model_dump(), 'classification': classification} for row, classification in zip(body.transactions, list(classifications))]
         classified_objects = BatchClassifierListSchema(transactions = classified_data) 
        
@@ -38,6 +49,6 @@ def run_classifier(body: BatchClassifierListSchema):
         pass
 
     except Exception as e:
-        error_msg = "Could not run classifier"
-        logger.warning(error_msg)
-        return {"mesage": error_msg}, 400
+        error_msg = f"Could not run classifier: {e}"
+        logger.error(error_msg)
+        return {"message": error_msg}, 400

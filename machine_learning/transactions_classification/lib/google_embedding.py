@@ -3,7 +3,6 @@ from numpy.linalg import norm
 import numpy as np
 from google import genai
 from google.genai import types
-from tqdm.auto import tqdm
 import os
 
 
