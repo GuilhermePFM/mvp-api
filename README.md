@@ -158,6 +158,7 @@ ControleFinanceiro/
 │
 ├── model/                         # Modelos de dados (SQLAlchemy)
 │   ├── base.py                    # Classe base para modelos
+│   ├── batch_job.py               # Modelo de job assíncrono (NOVO)
 │   ├── transaction.py             # Modelo de transação
 │   ├── transaction_category.py    # Modelo de categoria
 │   ├── transaction_type.py        # Modelo de tipo
@@ -165,6 +166,7 @@ ControleFinanceiro/
 │
 ├── schemas/                       # Schemas de validação (Pydantic)
 │   ├── batch_classifier.py        # Schema para classificação
+│   ├── batch_job.py               # Schema para jobs assíncronos (NOVO)
 │   ├── error.py                   # Schema de erros
 │   ├── transaction.py             # Schema de transação
 │   ├── transaction_category.py    # Schema de categoria
@@ -180,6 +182,7 @@ ControleFinanceiro/
 │       └── utils.py
 │
 ├── tests/                         # Testes automatizados
+│   ├── test_async_batch_classifier.py  # Testes de endpoints assíncronos (NOVO)
 │   ├── test_dataset_encryption.py # Testes de criptografia
 │   ├── test_integration_transactions_ml_model.py  # Testes de integração
 │   ├── test_transactions_ml_model.py  # Testes do modelo ML
@@ -187,6 +190,17 @@ ControleFinanceiro/
 │
 ├── database/                      # Banco de dados SQLite
 │   └── db.sqlite3
+│
+├── kafka/                        # Infraestrutura Kafka para processamento assíncrono
+│   ├── __init__.py                # Package init
+│   ├── batch_job_publisher.py    # Publisher para jobs assíncronos
+│   ├── embeddings_worker.py      # Worker 1: Processa embeddings
+│   ├── classification_worker.py  # Worker 2: Executa classificação
+│   ├── utils.py                   # Utilitários (retry, backoff)
+│   ├── job_cleanup.py             # Script de limpeza de jobs antigos
+│   ├── embeddings_consumer.py     # Consumer legado de embeddings
+│   ├── text_description_publisher.py  # Publisher legado
+│   └── process_classification_data.py # Processamento legado
 │
 ├── template/                      # Template Excel para upload
 │   └── template.xlsx
@@ -314,6 +328,257 @@ Suíte completa de testes automatizados:
 
 ---
 
+## Arquitetura Assíncrona de Classificação em Lote
+
+Para lidar com volumes maiores de dados e tempos de resposta mais longos do serviço de embeddings, o sistema oferece uma **arquitetura assíncrona baseada em Kafka** que desacopla o processamento de classificação da requisição HTTP.
+
+### Fluxo Assíncrono
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│           ARQUITETURA ASSÍNCRONA DE CLASSIFICAÇÃO                     │
+└──────────────────────────────────────────────────────────────────────┘
+
+1. 📤 Frontend: POST /api/batch-classify-async
+   └─► Retorna imediatamente: { "jobId": "uuid" }
+   └─► Status: 202 Accepted
+
+2. 💾 Job criado no banco de dados
+   └─► Status: pending
+   └─► Dados armazenados: transações de entrada
+
+3. 📨 Job publicado no Kafka
+   └─► Tópico: batch-jobs
+   └─► Workers consomem assincronamente
+
+4. 🔄 Worker 1: Embeddings
+   ├─► Consome de: batch-jobs
+   ├─► Atualiza status: processing
+   ├─► Chama API externa de embeddings
+   ├─► Retry automático (3x com backoff exponencial)
+   └─► Publica em: embeddings-results
+
+5. 🤖 Worker 2: Classification
+   ├─► Consome de: embeddings-results
+   ├─► Combina embeddings + transações
+   ├─► Executa modelo ML de classificação
+   ├─► Atualiza status: completed
+   └─► Armazena resultados no banco
+
+6. 🔍 Frontend: Polling GET /api/batch-jobs/{jobId}
+   ├─► Status: pending → processing → completed
+   ├─► Quando completed: retorna transações classificadas
+   └─► Job é deletado após fetch bem-sucedido
+```
+
+### Componentes da Arquitetura
+
+**1. API Endpoints**
+
+**`POST /api/batch-classify-async`**
+- Aceita lista de transações
+- Cria job no banco de dados
+- Publica no Kafka
+- Retorna `202 Accepted` com `jobId`
+
+**`GET /api/batch-jobs/{jobId}`**
+- Retorna status atual do job
+- Estados possíveis: `pending`, `processing`, `completed`, `failed`
+- Quando `completed`: inclui transações classificadas
+- Job é deletado após fetch bem-sucedido
+
+**2. Tópicos Kafka**
+
+| Tópico | Produtor | Consumidor | Conteúdo |
+|--------|----------|------------|----------|
+| `batch-jobs` | API Flask | Embeddings Worker | Job ID + transações |
+| `embeddings-results` | Embeddings Worker | Classification Worker | Job ID + transações + embeddings |
+
+**3. Workers**
+
+**Embeddings Worker** (`kafka/embeddings_worker.py`)
+- Consome jobs do tópico `batch-jobs`
+- Extrai descrições das transações
+- Chama API externa de embeddings com retry (3x)
+- Publica resultados em `embeddings-results`
+- Gerencia falhas e atualiza status no banco
+
+**Classification Worker** (`kafka/classification_worker.py`)
+- Consome do tópico `embeddings-results`
+- Combina embeddings com dados das transações
+- Executa modelo ML de classificação
+- Salva resultados no banco de dados
+- Marca job como `completed`
+
+**4. Banco de Dados**
+
+**Modelo `BatchJob`** (`model/batch_job.py`)
+- `id`: UUID único do job
+- `status`: pending | processing | completed | failed
+- `created_at`, `updated_at`: Timestamps
+- `transactions_input`: JSON com transações de entrada
+- `transactions_output`: JSON com transações classificadas
+- `error_message`: Mensagem de erro (se falhar)
+- `retry_count`: Contador de tentativas
+
+### Tratamento de Erros e Retry
+
+**Estratégia de Retry**
+- **3 tentativas** para chamadas à API de embeddings
+- **Backoff exponencial**: 2s → 4s → 8s
+- Erros são logados com detalhes completos
+- Job marcado como `failed` após esgotamento de tentativas
+
+**Estados de Erro**
+- `failed`: Erro irrecuperável (API indisponível, dados inválidos)
+- Mensagem de erro detalhada retornada no GET
+
+**Cleanup Automático**
+- Jobs completados são deletados após fetch
+- Fallback: Script `kafka/job_cleanup.py` remove jobs com > 24h
+- Pode ser executado via cron para manutenção
+
+### Como Executar o Sistema Assíncrono
+
+**1. Iniciar Kafka**
+```bash
+# Usando Docker (recomendado)
+docker run -d --name kafka \
+  -p 9092:9092 \
+  -e KAFKA_ENABLE_KRAFT=yes \
+  apache/kafka:latest
+
+# Ou instale localmente e inicie o broker
+```
+
+**2. Configurar Variáveis de Ambiente**
+```bash
+# Adicione ao arquivo .env
+KAFKA_BROKER_ADDRESS=localhost:9092
+BATCH_JOBS_TOPIC=batch-jobs
+EMBEDDINGS_RESULTS_TOPIC=embeddings-results
+EMBEDDINGS_CONSUMER_GROUP=embeddings_worker
+CLASSIFICATION_CONSUMER_GROUP=classification_worker
+EMBEDDING_API_URL=http://localhost:8000
+```
+
+**3. Iniciar Workers**
+```bash
+# Terminal 1: Embeddings Worker
+python kafka/embeddings_worker.py
+
+# Terminal 2: Classification Worker
+python kafka/classification_worker.py
+```
+
+**4. Iniciar API**
+```bash
+# Terminal 3: Flask API
+python app.py
+```
+
+**5. Manutenção (Opcional)**
+```bash
+# Executar cleanup manual de jobs antigos
+python kafka/job_cleanup.py
+
+# Ou agendar via cron (Linux/Mac)
+# Adicione ao crontab: 0 2 * * * cd /path/to/project && python kafka/job_cleanup.py
+```
+
+### Exemplo de Uso
+
+**Requisição:**
+```bash
+curl -X POST http://localhost:5000/api/batch-classify-async \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transactions": [
+      {
+        "date": "2024-01-15T00:00:00",
+        "description": "Grocery shopping",
+        "value": 150.50,
+        "user": "John Doe",
+        "classification": null
+      }
+    ]
+  }'
+```
+
+**Resposta (202 Accepted):**
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Polling Status:**
+```bash
+# Polling a cada 2 segundos
+curl http://localhost:5000/api/batch-jobs/550e8400-e29b-41d4-a716-446655440000
+
+# Resposta (processing):
+{"status": "processing"}
+
+# Resposta (completed):
+{
+  "status": "completed",
+  "transactions": [
+    {
+      "date": "2024-01-15T00:00:00",
+      "description": "Grocery shopping",
+      "value": 150.50,
+      "user": "John Doe",
+      "classification": "Food & Groceries"
+    }
+  ]
+}
+```
+
+### Monitoramento e Troubleshooting
+
+**Verificar Status dos Workers**
+```bash
+# Workers devem exibir logs como:
+# ============================================================
+# EMBEDDINGS WORKER STARTING
+# ============================================================
+# Starting embeddings worker, consuming from batch-jobs
+```
+
+**Logs Importantes**
+- Workers logam cada mensagem processada
+- Erros são logados com stack trace completo
+- Kafka offsets são commitados apenas após sucesso
+
+**Problemas Comuns**
+
+| Problema | Causa Provável | Solução |
+|----------|----------------|---------|
+| Job fica `pending` indefinidamente | Workers não estão rodando | Inicie os workers |
+| Status `failed` com erro de API | API de embeddings offline | Verifique `EMBEDDING_API_URL` |
+| Workers crasham ao iniciar | Kafka não está acessível | Verifique `KAFKA_BROKER_ADDRESS` |
+| Job não encontrado (404) | Job já foi fetcheado | Jobs são deletados após fetch |
+
+### Performance e Escalabilidade
+
+**Throughput**
+- Limitado pela API externa de embeddings
+- Tipicamente: 5-30 segundos por job
+- Varia com tamanho do lote e latência da API
+
+**Escalabilidade Horizontal**
+- Workers podem ser escalados independentemente
+- Kafka distribui carga automaticamente
+- Múltiplas instâncias do mesmo consumer group
+
+**Otimizações Futuras**
+- Cache de embeddings para descrições similares
+- Batching de múltiplos jobs para API de embeddings
+- WebSockets para notificações ao invés de polling
+
+---
+
 ## Tecnologias Utilizadas
 
 ### Backend e API
@@ -321,6 +586,7 @@ Suíte completa de testes automatizados:
 - **Flask-OpenAPI3**: Documentação automática OpenAPI 3.0
 - **Flask-CORS**: Gerenciamento de CORS para comunicação com frontend
 - **Pydantic 2.10.6**: Validação de dados e serialização
+- **Kafka/quixstreams 2.4**: Message broker para processamento assíncrono
 
 ### Banco de Dados
 - **SQLAlchemy 2.0.39**: ORM para Python
@@ -362,6 +628,16 @@ MODEL_PATH=
 
 # Chave de criptografia para datasets (OBRIGATÓRIO para funcionalidades de segurança)
 ENC_KEY=sua_chave_de_criptografia_aqui
+
+# Kafka Configuration (para processamento assíncrono)
+KAFKA_BROKER_ADDRESS=localhost:9092
+BATCH_JOBS_TOPIC=batch-jobs
+EMBEDDINGS_RESULTS_TOPIC=embeddings-results
+EMBEDDINGS_CONSUMER_GROUP=embeddings_worker
+CLASSIFICATION_CONSUMER_GROUP=classification_worker
+
+# External Embedding API
+EMBEDDING_API_URL=http://localhost:8000
 ```
 
 **A API Key do Google Gemini foi enviada na descrição do MVP, pela plataforma.**
@@ -526,10 +802,11 @@ A API oferece documentação interativa completa através do **Swagger UI**, ond
 
 #### 🤖 **Classificação de Transações**
 
-**`POST /batchclassifier`**
+**`POST /batchclassifier`** (Síncrono)
 - Classifica automaticamente um lote de transações usando Machine Learning
 - **Payload**: Lista de transações com `value`, `date`, `description`
 - **Resposta**: Lista de transações com campo `classification` adicionado
+- **Uso**: Para lotes pequenos com resposta imediata
 
 ```json
 {
@@ -542,6 +819,64 @@ A API oferece documentação interativa completa através do **Swagger UI**, ond
       "classification": null
     }
   ]
+}
+```
+
+**`POST /api/batch-classify-async`** (Assíncrono - Novo!)
+- Submete job de classificação para processamento assíncrono
+- **Payload**: Lista de transações (igual ao endpoint síncrono)
+- **Resposta**: `202 Accepted` com `jobId` para polling
+- **Uso**: Para lotes grandes ou quando o tempo de resposta é alto
+
+```json
+// Request
+{
+  "transactions": [
+    {
+      "date": "2024-01-15T00:00:00",
+      "description": "Grocery shopping",
+      "value": 150.50,
+      "user": "John Doe",
+      "classification": null
+    }
+  ]
+}
+
+// Response (202 Accepted)
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**`GET /api/batch-jobs/{jobId}`**
+- Consulta status de job assíncrono
+- **Resposta**: Status atual + resultados (se completo)
+- **Estados**: `pending`, `processing`, `completed`, `failed`
+
+```json
+// Status: processing
+{
+  "status": "processing"
+}
+
+// Status: completed
+{
+  "status": "completed",
+  "transactions": [
+    {
+      "date": "2024-01-15T00:00:00",
+      "description": "Grocery shopping",
+      "value": 150.50,
+      "user": "John Doe",
+      "classification": "Food & Groceries"
+    }
+  ]
+}
+
+// Status: failed
+{
+  "status": "failed",
+  "message": "External API unavailable"
 }
 ```
 
@@ -604,7 +939,21 @@ pytest --cov=. --cov-report=html
 - **`test_transactions_ml_model.py`**: Testa a performance e precisão do modelo de classificação
 - **`test_integration_transactions_ml_model.py`**: Testa a integração completa do pipeline de ML
 - **`test_dataset_encryption.py`**: Valida os mecanismos de criptografia de dados
+- **`test_async_batch_classifier.py`**: Testa endpoints assíncronos, workers Kafka e retry logic
 - **`classification_fixtures/`**: Fixtures com dados de teste e resultados esperados
+
+### Testar Endpoints Assíncronos
+
+```bash
+# Testes de endpoints assíncronos
+pytest tests/test_async_batch_classifier.py -v
+
+# Testar apenas retry logic
+pytest tests/test_async_batch_classifier.py::TestRetryLogic -v
+
+# Testar job cleanup
+pytest tests/test_async_batch_classifier.py::TestJobCleanup -v
+```
 
 ---
 
