@@ -3,6 +3,7 @@ set -e
 
 WORKER_TYPE="${WORKER_TYPE:-api}"
 
+MODEL_NAME="embedding_classification_model.pkl"
 echo "🚀 Starting Controle Financeiro ($WORKER_TYPE)..."
 
 # Create necessary directories if they don't exist
@@ -44,12 +45,12 @@ fi
 # Check if ML models exist (for API and classification worker)
 if [ "$WORKER_TYPE" = "api" ] || [ "$WORKER_TYPE" = "classification" ]; then
     echo "🤖 Checking ML models..."
-    MODEL_PATH="${MODEL_PATH:-/app/machine_learning/transactions_classification/models/embedding_classification_model.pkl}"
+    MODEL_PATH="${MODEL_PATH:-/app/machine_learning/transactions_classification/models/}"
     
-    if [ -f "$MODEL_PATH/classification_model.pkl" ]; then
-        echo "✅ ML model found at $MODEL_PATH/classification_model.pkl"
+    if [ -f "$MODEL_PATH/$MODEL_NAME" ]; then
+        echo "✅ ML model found at $MODEL_PATH/$MODEL_NAME"
     else
-        echo "⚠️  WARNING: ML model not found at $MODEL_PATH/classification_model.pkl"
+        echo "⚠️  WARNING: ML model not found at $MODEL_PATH/$MODEL_NAME"
         echo "   Classification features may not work properly."
     fi
     

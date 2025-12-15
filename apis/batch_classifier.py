@@ -69,7 +69,7 @@ def batch_classify_async(body: BatchClassifyAsyncRequest):
         logger.debug(f"Creating async batch classification job")
         
         # Convert transactions to JSON string for storage
-        transactions_data = [t.model_dump() for t in body.transactions]
+        transactions_data = [t.model_dump(mode='json') for t in body.transactions]
         transactions_json = json_module.dumps(transactions_data)
         
         # Create job in database
