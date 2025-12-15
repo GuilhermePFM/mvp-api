@@ -7,13 +7,19 @@ from schemas import  ErrorSchema
 from config import transaction_tag as transaction_tag
 from config import app
 from flask import request, json
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel, Field
 from machine_learning.transactions_classifier import TransactionsClassifier
 from machine_learning.transactions_classification.lib.external_embedding_api import create_embeddings_api
 from model import Session, BatchJob, JobStatus
 from kafka.batch_job_publisher import publish_batch_job
 import pandas as pd
 import json as json_module
+
+
+class JobIdPath(BaseModel):
+    """Path parameter model for job_id"""
+    job_id: str = Field(..., description="job id")
+
 
 @app.post('/batchclassifier', tags=[tag],
           responses={"200": BatchClassifierListSchema, "500": ErrorSchema, "400": ErrorSchema})
@@ -111,15 +117,17 @@ def batch_classify_async(body: BatchClassifyAsyncRequest):
         return {"message": error_msg}, 500
 
 
-@app.get('/batch-jobs/<string:job_id>', tags=[tag],
+@app.get('/batch-jobs/<str:job_id>', tags=[tag],
          responses={"200": BatchJobStatusResponse, "404": ErrorSchema, "500": ErrorSchema})
-def get_batch_job_status(job_id: str):
+def get_batch_job_status(path: JobIdPath):
     """
     Get the status of a batch classification job.
     Returns status and results if completed.
     Deletes the job after successful fetch if status is completed.
     """
     try:
+        job_id = path.job_id  # Extract job_id from path model
+        
         logger.debug(f"Fetching status for job {job_id}")
         
         session = Session()
