@@ -44,7 +44,7 @@ fi
 # Check if ML models exist (for API and classification worker)
 if [ "$WORKER_TYPE" = "api" ] || [ "$WORKER_TYPE" = "classification" ]; then
     echo "🤖 Checking ML models..."
-    MODEL_PATH="${MODEL_PATH:-/app/machine_learning}"
+    MODEL_PATH="${MODEL_PATH:-/app/machine_learning/transactions_classification/models/embedding_classification_model.pkl}"
     
     if [ -f "$MODEL_PATH/classification_model.pkl" ]; then
         echo "✅ ML model found at $MODEL_PATH/classification_model.pkl"
