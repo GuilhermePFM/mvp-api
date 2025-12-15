@@ -58,7 +58,7 @@ def run_classifier(body: BatchClassifierListSchema):
         return {"message": error_msg}, 400
 
 
-@app.post('/api/batch-classify-async', tags=[tag],
+@app.post('/batch-classify-async', tags=[tag],
           responses={"202": BatchClassifyAsyncResponse, "400": ErrorSchema, "500": ErrorSchema})
 def batch_classify_async(body: BatchClassifyAsyncRequest):
     """
@@ -111,7 +111,7 @@ def batch_classify_async(body: BatchClassifyAsyncRequest):
         return {"message": error_msg}, 500
 
 
-@app.get('/api/batch-jobs/<string:job_id>', tags=[tag],
+@app.get('/batch-jobs/<string:job_id>', tags=[tag],
          responses={"200": BatchJobStatusResponse, "404": ErrorSchema, "500": ErrorSchema})
 def get_batch_job_status(job_id: str):
     """
