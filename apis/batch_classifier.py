@@ -117,7 +117,7 @@ def batch_classify_async(body: BatchClassifyAsyncRequest):
         return {"message": error_msg}, 500
 
 
-@app.get('/batch-jobs/<str:job_id>', tags=[tag],
+@app.get('/batch-jobs/<string:job_id>', tags=[tag],
          responses={"200": BatchJobStatusResponse, "404": ErrorSchema, "500": ErrorSchema})
 def get_batch_job_status(path: JobIdPath):
     """
