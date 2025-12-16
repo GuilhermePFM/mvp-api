@@ -92,7 +92,7 @@ def process_classification(message_value):
         # Create DataFrame with transaction data (excluding user and classification)
         transactions_data = []
         for t in transactions:
-            datetime_obj = pd.to_datetime(t.get('date', utc=True)
+            datetime_obj = pd.to_datetime(t.get('date'), utc=True)
             datetime_ms = datetime_obj.astype('datetime64[ms]')
             tx_data = {
                 'Data': datetime_ms,
