@@ -86,16 +86,16 @@ def process_classification(message_value):
     
     try:
         # Convert embeddings to DataFrame
-        embeddings_df = pd.DataFrame(embeddings)
+        embeddings_df = pd.DataFrame(embeddings, columns=[f'embedding_{i}' for i in range(len(embeddings[0]))])
         logger.info(f"Created embeddings DataFrame with shape {embeddings_df.shape}")
         
         # Create DataFrame with transaction data (excluding user and classification)
         transactions_data = []
         for t in transactions:
             tx_data = {
-                'date': t.get('date'),
-                'description': t.get('description'),
-                'value': t.get('value')
+                'Data': t.get('date'),
+                'Descrição': t.get('description'),
+                'Valor': t.get('value')
             }
             transactions_data.append(tx_data)
         
