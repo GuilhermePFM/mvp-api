@@ -92,8 +92,10 @@ def process_classification(message_value):
         # Create DataFrame with transaction data (excluding user and classification)
         transactions_data = []
         for t in transactions:
+            datetime_obj = pd.to_datetime(t.get('date', utc=True)
+            datetime_ms = datetime_obj.astype('datetime64[ms]')
             tx_data = {
-                'Data': t.get('date'),
+                'Data': datetime_ms,
                 'Descrição': t.get('description'),
                 'Valor': t.get('value')
             }
@@ -105,6 +107,8 @@ def process_classification(message_value):
         # Combine transactions with embeddings
         df_combined = pd.concat([df, embeddings_df], axis=1)
         logger.info(f"Combined DataFrame shape: {df_combined.shape}")
+        logger.info(f"Combined DataFrame columns: {df_combined.columns}")
+        logger.info(f": {df_combined.head()}")
         
         # Run ML classification
         model = TransactionsClassifier()
