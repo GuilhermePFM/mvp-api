@@ -44,12 +44,12 @@ def load_pickle(path):
 
 @fixture
 def X_test(fixtures_path):
-    return load_pickle(fixtures_path / "X_test_preprocessed.pkl")
+    return load_pickle(fixtures_path / "embeddings_X_test_preprocessed.pkl")
 
 
 @fixture
 def X_test_raw(fixtures_path):
-    return load_pickle(fixtures_path / "X_test_raw.pkl")
+    return load_pickle(fixtures_path / "embeddings_X_test_raw.pkl")
 
 
 @fixture
