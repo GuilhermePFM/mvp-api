@@ -93,9 +93,8 @@ def process_classification(message_value):
         transactions_data = []
         for t in transactions:
             datetime_obj = pd.to_datetime(t.get('date'), utc=True)
-            datetime_ms = datetime_obj.astype('datetime64[ms]')
             tx_data = {
-                'Data': datetime_ms,
+                'Data': datetime_obj,
                 'Descrição': t.get('description'),
                 'Valor': t.get('value')
             }
@@ -112,7 +111,7 @@ def process_classification(message_value):
         
         # Run ML classification
         model = TransactionsClassifier()
-        classifications = model.predict(df_combined)
+        classifications = model.predict(model.preprocess(df_combined))
         logger.info(f"Model predicted {len(classifications)} classifications")
         
         # Create classified transactions list
