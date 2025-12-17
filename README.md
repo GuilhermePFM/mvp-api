@@ -4,7 +4,7 @@ Este é o repositório do back-end do projeto **Controle Financeiro**, desenvolv
 
 Outros repositórios associados:
 * Front-end [https://github.com/GuilhermePFM/mvp-front-end](https://github.com/GuilhermePFM/mvp-front-end).
-* Embedding API [https://github.com/GuilhermePFM/mvp-front-end](https://github.com/GuilhermePFM/mvp-embedding).
+* Embedding API [https://github.com/GuilhermePFM/mvp-embedding](https://github.com/GuilhermePFM/mvp-embedding).
 ---
 
 ## Índice
@@ -28,6 +28,12 @@ Outros repositórios associados:
   - [Como Funciona a Classificação Inteligente](#como-funciona-a-classificação-inteligente)
     - [Fluxo de Classificação](#fluxo-de-classificação)
     - [Tecnologias de Machine Learning](#tecnologias-de-machine-learning)
+  - [Arquitetura Assíncrona de Classificação em Lote](#arquitetura-assíncrona-de-classificação-em-lote)
+    - [Fluxo Assíncrono](#fluxo-assíncrono)
+    - [Componentes da Arquitetura](#componentes-da-arquitetura)
+    - [Tratamento de Erros e Retry](#tratamento-de-erros-e-retry)
+    - [Exemplo de Uso](#exemplo-de-uso)
+    - [Performance](#performance)
   - [Tecnologias Utilizadas](#tecnologias-utilizadas)
     - [Backend e API](#backend-e-api)
     - [Banco de Dados](#banco-de-dados)
@@ -69,6 +75,7 @@ Outros repositórios associados:
     - [Executar Testes Específicos](#executar-testes-específicos)
     - [Executar com Cobertura](#executar-com-cobertura)
     - [Estrutura de Testes](#estrutura-de-testes)
+    - [Testar Endpoints Assíncronos](#testar-endpoints-assíncronos)
   - [Segurança](#segurança-1)
     - [🔐 Criptografia de Dados](#-criptografia-de-dados)
     - [🛡️ Proteção de Informações Pessoais](#️-proteção-de-informações-pessoais)
@@ -85,15 +92,20 @@ O diferencial deste sistema é a **classificação automática de transações**
 
 ## Arquitetura do Sistema
 
-O projeto **Controle Financeiro** é composto por **três microserviços** que trabalham em conjunto:
+Este projeto utiliza uma arquitetura de **microserviços distribuídos** com processamento assíncrono via Kafka:
 
 ![alt text](backend.png)
 
-**1. Interface (Front-end):** Aplicação web onde o usuário interage, faz upload de transações e visualiza os resultados.
+**Componentes:**
+1. **Frontend (Nginx)** - Interface web
+2. **Backend API (Este Repositório)** - Gerencia lógica de negócio, orquestra jobs via Kafka, fornece endpoints REST
+3. **Embedding API** - Gera embeddings via Google Gemini
+4. **Kafka Broker** - Message broker com tópicos `batch-jobs` e `embeddings-results`
+5. **Embeddings Worker** - Consome `batch-jobs`, chama Embedding API, publica em `embeddings-results`
+6. **Classification Worker** - Consome `embeddings-results`, executa ML, salva resultados
+7. **Inicialização de Tópicos Kafka** - Inicialização de tópicos
 
-**2. Backend API (Este Repositório):** Serviço principal que gerencia dados, executa classificações e coordena a comunicação entre os serviços.
-
-**3. API de Embeddings:** Serviço externo (Google Gemini API) que gera embeddings semânticos das descrições das transações para melhorar a precisão da classificação.
+**Fluxo Assíncrono:** Ver seção [Arquitetura Assíncrona](#arquitetura-assíncrona-de-classificação-em-lote)
 
 
 
@@ -192,7 +204,7 @@ ControleFinanceiro/
 │   └── db.sqlite3
 │
 ├── kafka/                        # Infraestrutura Kafka para processamento assíncrono
-│   ├── __init__.py                # Package init
+│   ├── __init__.py                # Inicialização do pacote
 │   ├── batch_job_publisher.py    # Publisher para jobs assíncronos
 │   ├── embeddings_worker.py      # Worker 1: Processa embeddings
 │   ├── classification_worker.py  # Worker 2: Executa classificação
@@ -373,7 +385,7 @@ Para lidar com volumes maiores de dados e tempos de resposta mais longos do serv
 
 ### Componentes da Arquitetura
 
-**1. API Endpoints**
+**1. Endpoints da API**
 
 **`POST /api/batch-classify-async`**
 - Aceita lista de transações
@@ -435,56 +447,7 @@ Para lidar com volumes maiores de dados e tempos de resposta mais longos do serv
 
 **Cleanup Automático**
 - Jobs completados são deletados após fetch
-- Fallback: Script `kafka/job_cleanup.py` remove jobs com > 24h
-- Pode ser executado via cron para manutenção
-
-### Como Executar o Sistema Assíncrono
-
-**1. Iniciar Kafka**
-```bash
-# Usando Docker (recomendado)
-docker run -d --name kafka \
-  -p 9092:9092 \
-  -e KAFKA_ENABLE_KRAFT=yes \
-  apache/kafka:latest
-
-# Ou instale localmente e inicie o broker
-```
-
-**2. Configurar Variáveis de Ambiente**
-```bash
-# Adicione ao arquivo .env
-KAFKA_BROKER_ADDRESS=localhost:9092
-BATCH_JOBS_TOPIC=batch-jobs
-EMBEDDINGS_RESULTS_TOPIC=embeddings-results
-EMBEDDINGS_CONSUMER_GROUP=embeddings_worker
-CLASSIFICATION_CONSUMER_GROUP=classification_worker
-EMBEDDING_API_URL=http://localhost:8000
-```
-
-**3. Iniciar Workers**
-```bash
-# Terminal 1: Embeddings Worker
-python kafka/embeddings_worker.py
-
-# Terminal 2: Classification Worker
-python kafka/classification_worker.py
-```
-
-**4. Iniciar API**
-```bash
-# Terminal 3: Flask API
-python app.py
-```
-
-**5. Manutenção (Opcional)**
-```bash
-# Executar cleanup manual de jobs antigos
-python kafka/job_cleanup.py
-
-# Ou agendar via cron (Linux/Mac)
-# Adicione ao crontab: 0 2 * * * cd /path/to/project && python kafka/job_cleanup.py
-```
+- Script `kafka/job_cleanup.py` remove jobs com > 24h (execução manual ou cron)
 
 ### Exemplo de Uso
 
@@ -535,47 +498,11 @@ curl http://localhost:5000/api/batch-jobs/550e8400-e29b-41d4-a716-446655440000
 }
 ```
 
-### Monitoramento e Troubleshooting
+### Performance
 
-**Verificar Status dos Workers**
-```bash
-# Workers devem exibir logs como:
-# ============================================================
-# EMBEDDINGS WORKER STARTING
-# ============================================================
-# Starting embeddings worker, consuming from batch-jobs
-```
-
-**Logs Importantes**
-- Workers logam cada mensagem processada
-- Erros são logados com stack trace completo
-- Kafka offsets são commitados apenas após sucesso
-
-**Problemas Comuns**
-
-| Problema | Causa Provável | Solução |
-|----------|----------------|---------|
-| Job fica `pending` indefinidamente | Workers não estão rodando | Inicie os workers |
-| Status `failed` com erro de API | API de embeddings offline | Verifique `EMBEDDING_API_URL` |
-| Workers crasham ao iniciar | Kafka não está acessível | Verifique `KAFKA_BROKER_ADDRESS` |
-| Job não encontrado (404) | Job já foi fetcheado | Jobs são deletados após fetch |
-
-### Performance e Escalabilidade
-
-**Throughput**
-- Limitado pela API externa de embeddings
-- Tipicamente: 5-30 segundos por job
-- Varia com tamanho do lote e latência da API
-
-**Escalabilidade Horizontal**
-- Workers podem ser escalados independentemente
-- Kafka distribui carga automaticamente
-- Múltiplas instâncias do mesmo consumer group
-
-**Otimizações Futuras**
-- Cache de embeddings para descrições similares
-- Batching de múltiplos jobs para API de embeddings
-- WebSockets para notificações ao invés de polling
+- Throughput limitado pela API externa de embeddings (5-30s por job)
+- Workers escaláveis horizontalmente via Kafka consumer groups
+- Kafka distribui carga automaticamente entre instâncias
 
 ---
 
@@ -636,7 +563,7 @@ EMBEDDINGS_RESULTS_TOPIC=embeddings-results
 EMBEDDINGS_CONSUMER_GROUP=embeddings_worker
 CLASSIFICATION_CONSUMER_GROUP=classification_worker
 
-# External Embedding API
+# API Externa de Embeddings
 EMBEDDING_API_URL=http://localhost:8000
 ```
 
@@ -834,7 +761,7 @@ A API oferece documentação interativa completa através do **Swagger UI**, ond
   "transactions": [
     {
       "date": "2024-01-15T00:00:00",
-      "description": "Grocery shopping",
+      "description": "Compras no supermercado",
       "value": 150.50,
       "user": "John Doe",
       "classification": null
@@ -865,7 +792,7 @@ A API oferece documentação interativa completa através do **Swagger UI**, ond
   "transactions": [
     {
       "date": "2024-01-15T00:00:00",
-      "description": "Grocery shopping",
+      "description": "Compras no supermercado",
       "value": 150.50,
       "user": "John Doe",
       "classification": "Food & Groceries"
@@ -967,6 +894,12 @@ O sistema implementa múltiplas camadas de segurança para proteger dados sensí
 - **Módulo**: `security/dataset.py`
 
 ### 🛡️ Proteção de Informações Pessoais
+- Dados de usuários e transações são tratados com políticas de segurança rigorosas
+- Sistema de salting para proteção adicional
+
+---
+
+**Desenvolvido como parte do MVP para Pós-Graduação em Engenharia de Software - PUC Rio**
 - Dados de usuários e transações são tratados com políticas de segurança rigorosas
 - Sistema de salting para proteção adicional
 
